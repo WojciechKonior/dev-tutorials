@@ -2,6 +2,10 @@
 
 #include <CL/cl.hpp>
 
+__kernel void function(__global int* data){
+  data[get_global_id(0)] *= 2*get_local_id(0);
+}
+
 int main(){
   std::vector<cl::Platform> platforms;
   cl::Platform::get(&platforms);
