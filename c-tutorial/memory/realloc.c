@@ -27,6 +27,20 @@ int main(void){
   // old data is left at the old position even if at new possition it is copied
   for(int i = 0; i<10; i++) printf("save[%d] = %d\n", i, save_ptr[i]);
 
+
+  char *password1 = malloc(7*sizeof(char));
+  char *password2 = malloc(7*sizeof(char));
+
+  strcpy(password1, "abc123");
+  strcpy(password2, "xyz789");
+
+  printf("p1 addr: %p\np2 addr: %p\n", password1, password2");
+  printf("p1 addr. %d\nnp2 addr: %d\n", (int)password1, (int)password2);
+
+  for(int i = 0; i<100; i++)
+    printf("%c", password1[i]);
+  printf("\n");
+
   free(a);
   return 0;
 }
