@@ -64,13 +64,18 @@ int main(){
 
   // Step 6: Define work size and execute kernel
   size_t globalSize = VECTOR_SIZE;
-  cl_event event; // Event for profiling
+  cl_event kernel_event; // Event for profiling
 
-  err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &globalSize, NULL, 0, NULL, &event);
+  err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &globalSize, NULL, 0, NULL, &kernel_event);
   if(err != CL_SUCCESS) { printf("Error: Failed to execute kernel!\n"); return EXIT_FAILURE; }
 
-  // Step 7: Wait for kernel to finish and measure time
-  clWaitForEvents(1, &event);
+  // Step 7a: Insert a marker event after the kernel execution
+  cl_event marker_event;
+  err = clEnqueueMarkerWithWaitList(queue, 1, &kernel_event, &marker_event);
+  if (err != CL_SUCCESS) { print("Error: Failed to enqueue marker event!\n"); return EXIT_FAILURE; }
+  
+  // Step 7b: Wait for kernel to finish and measure time
+  clWaitForEvents(1, &marker_event);
 
   // Query the profiling information
   cl_ulong start, end;
@@ -90,7 +95,8 @@ int main(){
   }
 
   // Step 9: Cleanup
-  clReleaseEvent(event);
+  clReleaseEvent(kernel_event);
+  clReleaseEvent(marker_event);
   clReleaseKernel(kernel);
   clReleaseProgram(program);
   clReleaseMemObject(d_A);
