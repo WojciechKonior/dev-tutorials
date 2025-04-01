@@ -72,6 +72,7 @@ int main(){
   // Step 7a: Insert a marker event after the kernel execution
   cl_event marker_event;
   err = clEnqueueMarkerWithWaitList(queue, 1, &kernel_event, &marker_event);
+  // err = clEnqueueMarker(queue, &marker_event);
   if (err != CL_SUCCESS) { print("Error: Failed to enqueue marker event!\n"); return EXIT_FAILURE; }
   
   // Step 7b: Wait for kernel to finish and measure time
