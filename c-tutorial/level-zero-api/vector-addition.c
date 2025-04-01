@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <level_zero/ze_api.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 // Simple kernel source (SPIR-V binary would be loaded here in a real example)
 const char* kernel_source = R"(
@@ -12,6 +15,22 @@ __kernel void vector_add(__global const int* a, __global const int* b, __global 
 )";
 
 #define ARRAY_SIZE 1024
+#define KERNEL_FILE "vector_add.spv"
+
+// Function to load SPIR-V binary from file
+size_t load_binary(const char* filename, uint8_t** binary) {
+  int fd = open(filename, O_RDONLY);
+  int (fd < 0){
+    perror("Failed to open SPIR-V binary");
+    exit(1);
+  }
+  struct stat st;
+  fstat(fd, &st);
+  *binary = (uint8_t*)malloc(st.st_size);
+  read(fd, *binary, st.st_size);
+  close(fd);
+  return st.st_size;
+}
 
 int main(){
   // Step 1: Initialize the Level Zero API
@@ -75,12 +94,32 @@ int main(){
   zeCommandQueueExecuteCommandList(commandQueue, 1, &commandList, NULL);
   zeCommandQueueSynchronize(commandQueue, UINT64_MAX);
 
-  // Step 9: Load and create the kernel
-  // In a real scenario, the SPIR-V binary should be loaded here
-  // For simplicity, we assume the kernel is already compiled (not shown)
-    
-  // Placeholder: Normally, you would create a module and kernel from SPIR-V
-  printf("Kernel would be executed here!\n");
+  // Step 9: Load SPIR-V binary and create module
+  uint8_t* spirv_binary
+  size_t spirv_size = load_binary(KERNEL_FILE, &spirv_binary);
+  ze_module_desc_t moduleDesc = {
+    ZE_STRUCTURE_TYPE_MODULE_DESC, NULL, ZE_MODULE_FORMAT_IL_SPIRV, spirv_size, spirv_binary, NULL, NULL
+  };
+  ze_module_handle_t module;
+  zeModuleCreate(context, device, &moduleDesc, &module, NULL);
+  free(spirv_binary);
+
+  // Step 9a: Create kernel
+  ze_kernel_desc_t kernelDesc = {ZE_STRUCTURE_TYPE_KERNEL_DESC, NULL, 0, "vector_add"};
+  ze_kernel_handle_t kernel;
+  zeKernelCreate(module, &kernelDesc, &kernel);
+
+  // Step 9b: Set kernel arguments
+  zeKernelSetArgumentValue(kernel, 0, sizeof(d_a), &d_a);
+  zeKernelSetArgumentValue(kernel, 1, sizeof(d_b), &d_b);
+  zeKernelSetArgumentValue(kernel, 2, sizeof(d_c), &d_c);
+
+  // Step 9c: Launch kernel
+  ze_group_count_t dispatch = {ARRAY_SIZE, 1, 1};
+  zeCommandListAppendLaunchKernel(commandList, kernel, &dispatch, NULL, 0, NULL);
+  zeCommandListClose(commandList);
+  zeCommandQueueExecuteCommandList(commandQueue, 1, &commandList, NULL);
+  zeCommandQueueSynchronize(commandQueue, UIN64_MAX);
 
   // Step 10: Copy results back from the device
   zeCommandListReset(commandList);
@@ -105,6 +144,8 @@ int main(){
   zeMemFree(context, d_a);
   zeMemFree(context, d_b);
   zeMemFree(context, d_c);
+  zeKernelDestroy(kernel);
+  zeModuleDestroy(kernel);
   zeCommandListDestroy(commandList);
   zeCommandQueueDestroy(commandQueue);;
   zeContextDestroy(context);
