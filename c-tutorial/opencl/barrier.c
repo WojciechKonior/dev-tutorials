@@ -72,6 +72,7 @@ int main() {
   // Step 7: Insert a barrier with a wait list for the kernel event
   cl_event varrier_event;
   err = clEnqueueBarrierWithWaitList(queue, 1, &kernel_event, &barrier_event);
+  // err = clEnqueueBarrier(queue);
   if (err != CL_SUCCESS) { printf("Error: Failed to enqueue barrier event!\n"); return EXIT_FAILURE; }
 
   // Wait for the barrier event to complete
