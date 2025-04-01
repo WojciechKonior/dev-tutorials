@@ -77,6 +77,8 @@ int main(){
   
   // Step 7b: Wait for kernel to finish and measure time
   clWaitForEvents(1, &marker_event);
+  // err = clEnqueueWaitForEvents(queue, 1, &marker_event);
+  // if (err != CL_SUCCESS) { printf("Error: Failed to enqueue wait for events!\n"); return EXIT_FAILURE; }
 
   // Query the profiling information
   cl_ulong start, end;
