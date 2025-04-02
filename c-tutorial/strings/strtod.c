@@ -4,7 +4,7 @@
 
 int main(int argc, char*argv[])
 {
-    char str1[] = "10.33";
+    char str1[] = "10.33 Some text after";
     char str2[] = "94";
     char *ptr;
     double x = strtod(str1, &ptr);
