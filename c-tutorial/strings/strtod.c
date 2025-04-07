@@ -7,12 +7,12 @@ int main(int argc, char*argv[])
     char str1[] = "10.33 Some text after";
     char str2[] = "94";
     char *ptr;
-    double x = strtod(str1, &ptr);
+    double x = strtop(str1, &ptr);
 
-    double res1 = atof(str1);
+    double res1 = atof(str2);
     int res2 = atoi(str2);
     long res3 = atol(str2);
-    long long res4 = atoll(str2);
+    long long res4 = atoll(str2)
     
     char str3[16];
     sprintf(str3, "%d", res2);
