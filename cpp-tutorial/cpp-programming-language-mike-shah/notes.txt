@@ -1,0 +1,262 @@
+g++ -std=c++17 -g3 -O0 main.cpp -o main; ./main
+gdb --args ./app --arg1 --arg2 ...
+(gdb) x/12wx &arg
+
+typedef int (*FcnPtrType)(int,int);
+FcnPtrType = someFunctionName;
+std::function<int(int,int)> FcnPtr = someFunctionName;
+
+newStr = static_cast<std::string&&>(prevStr);
+newStr = std::move(prevStr);
+
+#include <memory>
+auto ptr = std::unique_ptr<UserDefinedClass>(new UserDefinedClass); // wyłączny właścicel
+auto arr = std::unique_ptr<UserDefinedClass[]>(new UserDefinedClass[10]);
+auto ptr = std::make_unique<UserDefinedClass>();
+auto arr = std::make_unique<UserDefinedClass[]>(10);
+auto ptr2 = std::move(ptr); // cannot copy but can be moved to the new one
+std::shared_ptr<UserDefinedClass> ptr3 = std::move(ptr2); // wielu właścicieli
+auto count = ptr3.use_count();
+std::weak_ptr<UserDefinedClass> ptr4 = ptr3; // obserwator nie właściciel
+ptr3.expired(); // weak_ptr służy do łamania błędnego koła (cycling)
+
+
+// compilator może dla nas zrobić za darmo default constructor, default destructor, copy constructor (shallow copy), copy-assignment operator (shallow copy)
+Array(const Array& rhs) { 
+    printf("Copy constructor\n"); 
+    data = new int[10]; 
+    for(int i = 0; i<10; i++) {
+        data[i] = rhs.data[i]; 
+    } 
+}
+Array& operator=(const Array& rhs) { 
+    printf("copy-assignment operator\n"); 
+    if(&rhs == this) return *this;
+    if(data != nullptr) delete[] data;
+    data = new int[10];
+    for(int i = 0; i<10; i++){
+        data[i] = rhs.data[i];
+    }
+    return *this;
+}
+Array(Array&& rhs){
+    printf("move constructor\n");
+    if(data != nullptr) delete[] data;
+    data = rhs.data;
+    rhs.data = nullptr;
+}
+Array& operator=(Array&& rhs){
+    printf("move assignment constructor\n");
+    if(&rhs == this) return *this;
+    if(data != nullptr) delete[] data;
+    data = rhs.data;
+    rhs.data = nullptr;
+    return *this;
+}
+
+// law of three: if you need implement a one of the constructor (default, copy, destructor) then you probably have to implement all three of them.
+Vec3 operator+(const Vec3& v) const { Vec3 res; res.x=x+v.x; res.y=y+v.y; res.z=z+v.z; return res;}
+Vec3(): x(1.0f), y(2.0f), z(3.0f) {} // zawsze w kolejności ich deklararacji w definicji klasy
+// RAII: powiązanie cyklu życia zasobu z czasem życia obiektu na stosie czyli pobranie zasobu w konstruktorze i zwolnienie go w destruktorze
+
+friend int somefunction(int some arg); friend class SomeClass;
+
+// explicit powoduje że konwersje niejawne nie mogą być wykonywane np SomeClass obj = 500;
+// stosowanie {} również podnosi bezpieczeństwo przy zaokrągleniach np SomeClass obj{500}
+class Base{};
+class Derived : public Base {};
+
+//calling different constructors: Derived(): Base("some argument") {}
+//when virtual is used in class the 8B of memory (pointer) is used for pointing to vtable
+
+sudo apt install cppman
+//const correctness: const value, const parameter, const member function
+//{} curly brackets initialization prevents us before initializing a variable with wrong data type
+//{} curly brackets serves as initialization_list
+// auto x = {1, 2, 3, 4} utworzy obiekt std::initializer_list<int> ale składnia typu: int tab[] = {1, 2, 3, 4}; struct Punkt { int x, y, z, w; }; Punkt p = {1, 2, 3, 4}; std::array<int, 4> arr = {1, 2, 3, 4}; nie tworzy
+
+//aby nie tworzyć relacji na zasadzie inheritance możemy użyć kompozycji albo agregacji (patrz referencja)
+
+//virtual inheritance jest po to aby rozwiązać problem diamond-inheritance; Dzięki temu tylko jedna kopia członków klasy bazowej jest dziedziczona. Przykład: class Warrior: virtual public Entity {};
+
+//najpierw wywoływane są konstruktory klas bazowych a potem pochodnych. Dekonstrukcja na odwrót
+//używanie member initializer list chroni nas przed niepotrzebnymi kopiowaniami kiedy możemy bezpośrednio skonstruować the memeber variable w obiekcie inaczej najpierw utworzy się pusty obiekt a potem jego pola będą inicjalizowane. chodzi o to aby połączyć te dwa kroki
+
+//kiedy nie mamy konstruktorów i powołujemy zmienną do życia (UDF zmienna;) to mamy w niej śmieci, jeżeli inicjalizujemy ją poprzez (UDF zmienna{}) to mamy zerowe wartości chyba że zrobimy konstruktor domyślny który nic nie robi to znowu mamy śmieci a jeżeli zrobimy konstr domyślny (UDF() = default;) to znowu będziemy mieli zera;
+
+// priorytety w inicjalizowaniu zmiennnych: najwyższy konstruktor -> in-classs initializer -> out-class initializer (Entity e{};)
+
+// konstruktor delegujący nie mieszać wywołania konstruktora z member initializer list: Entity(std::string name): Entity() {} 
+
+// pamiętaj o paddingu szczególnie jeśli używasz typów mniejszych niż 4B. Example: struct GaemState{bool checkpoint; float score; short numberOfPlayers}; . Lepiej to zrobić tak: struct GaemState{ float score; short numberOfPlayers; bool checkpoint;};
+// alignof(UserDefinedType); // o tym decyduje największy typ jaki jest w strukturze
+
+// pIMPL: pozwala ukryć implementację w ciele klasy która robi za interfejs. Iplementacja jest ukryta w klasie prywatnej która udostępnia w klasie interfejsu jedynie pointer. Daje to bardziej stabilne API
+
+// this jest pointerem do obecnej instacji obiektu
+// zmienne static allokowane są nie w stacku nie w heapie, ale w kodzie aplikacji (allocated in the binary only once at the beggining). Jeśli zmienimy tą wartość w funkcji to będzie ona zapamiętana, nawet jeśli powyżej znajduje się static int var = 0; bo to zero było inicjalizowane raz. Możesz sprawdzić objdump -t ./main
+// zmienne static w klasach to tylko deklaracje: definicje muszą być zrobione pozaklasą: struct API{static int var;}; int API::var = 7; metody statyczne mogą jedynie operować na polach statycznych
+
+// concurency - kolejność ma znaczenie (wątki zależne od np shared resources); parallelism - kolejność nie ma znaczenia (niezależne wątki)
+
+// template<> int square<int>(int a){return a*a;} lub abbreviated function template auto square(auto a) {return a*a;}
+
+template<typename T> T Sum(T arg) { return arg; }
+template<typename T, typename... Args> T Sum(T arg, Args... args) { return arg+Sum(args...);}
+template<typename T, size_t N> T StackContainer<T, N>::some_variable;
+template<typename T=int, size_t N=10> // default template parameters
+// CTAD class template argument deduction: std::vector v = {1, 2, 3, 4};  
+
+
+// unions w c++ może mieć member functions  
+// std::variant<int, float, std::string> v; v = 42; std::cout << std::get<int>(v); auto* attempt = std::get_if(int)(&v);  //to wciąż struktura a nie unia
+
+// bugi mogą być w runtime (najgorsze); link-time; compile-time
+// constexpr jest przydatny do tego aby zaoszczędzić runtime  
+// #include <cassert> assert(age > 0 && "Age cannot be negative");  static_assert(age>0, "Age cannot be negative");  // compile-time
+
+// std::cmp_greater(a,b)  cmp_less, cmp_equal, cmp_greater_equal, cmp_less_equal, cmp_not_equal #include <utility>  // C++20
+
+// double PI = static_cast<double>(3.14f); Base b = static_cast<Base>(derived); // works in compile time
+// dynamic_cast<Base*>(derived); // only works with polymorphic classes (with virtual functions) and pointers or references at runtime
+// static_cast może z sukcesem kastować Base i Derived w obie strony na słowo honoru, co może wywoła błąd runtime ale dynamic_cast może kastować bezpiecznie bo w runtime sprawdzić czy kast jest legalny, jeżeli nie jest to zwróci nullptr. dynamic_cast potrzebuje typ polimorficzny z vtable, korzysta z rtti. Dynamic cast służy do sprawdzania czy obiekt polimorficzny ma pełny typ lub jakiego typu pochodnego jest nasz bazowy wskaźnik
+
+//funktor to funkcja ze stanem (obiekt z przeładowanym operatorem (), obiekt funkcyjny)
+auto lambda = [&= &name name] (int param, ...) mutable -> void { some_actions(); };
+auto thr = std::jthread([](){ printf("Hello from %llu\n", std::this_thread::get_id()); });
+using int32_t = int;
+auto current_location = std::source_location::current();
+inline int add(int a, int b) { return a+b;} // oszczędzamy tworzenia oddzielnej ramki stosu z całym overheadem
+struct Struct{ inline static int SomeValue=67;}; // there is no need to initialize outside the class
+struct Struct{ static constexpr int SomeValue=67;}; //also inline because constexpr is always inline
+// std::mutex
+// std::lock_guard<std::mutex> glock(mtx);
+// std::atomic<int> shared_value = 0;
+// std::thread, std::this_thread::sleep_for(std::chrono::seconds(5))
+// <condition_variable>, std::condition_variable, .notify_one(), wait(lock)
+
+
+
+// STL: Containers, Iterators, Algorithm
+// STL - std::string: size, capacity, find, data, npos, shrink_to_fit
+// STL - std::array: size, sizeof, at, fill, max_size, sort
+// STL - std::span: extent
+// STL - std::vector: [], size, capacity, reserve, push_back, emplace_back, erase, clear, shrink_to_fit, data
+// STL - std::list: size, push_back, push_front, insert, erase, clear, sort, reverse, merge, splice
+// STL - std::forward_list: push_front, insert_after, erase_after, clear, sort, reverse, merge, splice_after
+// begin, end, std::advance, std::distance, std::next, std::prev
+// STL - std::deque: [], size, push_back, push_front, pop_back, pop_front, insert, erase
+// STL - std::set: insert, erase, find, count, lower_bount, upper_bound, size, empty, clear, begin, end
+// STL - std::unordered_set: insert, erase, reserve, contains, bucket_count, bucket_size, load_factor, merge, erase
+// STL - std::multiset: insert, erase, count, find, lower_bound, upper_bound, size, empty, clear
+// STL - std::unordered_multiset: insert, erase, reserve, contains, bucket_count, bucket_size, load_factor, merge, erase
+// STL - std::pair: first, second, std::make_pair
+// STL - std::map: insert, erase, find, count, at, size
+// STL - std::unordered_map: insert, erase, reserve, contains, bucket_count, bucket_size, load_factor, merge, erase
+// STL - std::unordered_multimap: insert, erase, reserve, contains, bucket_count, bucket_size, load_factor, merge, erase
+// STL - std::stack: push, pop, top, size, empty
+// STL - std::queue: push, pop, front, back, size, empty
+// STL - std::priority_queue: push, pop, top, size, empty
+
+
+// STL - std::vector<int>::iterator, std::vector<int>::const_iterator, std::vector<int>::reverse_iterator, std::vector<int>::const_reverse_iterator
+// STL - różne typy danych mają różne typy iteratorów ze względu na to co mogą one robić. Zmiany w pętlach mogą spowodować invalidate iterator.
+
+
+// STL - <algorithm>
+// STL - std::find, std::find_if, std::search, std::adjacent_find  
+// STL - std::mismatch 
+// STL - std::equal
+// STL - std::lexicographical
+// STL - std::all_of, std::any_of, std::none_of
+// STL - std::count, std::count_if
+// STL - std::copy, std::back_inserter
+// STL - std::iota, <numeric>
+// STL - std::copy_if, std::copy_n, std::back_inserter
+// STL - std::fill, std::fill_n
+// STL - std::generate, std::generate_n
+// STL - std::reverse, std::reverse_copy
+// STL - std::remove, std::remove_if
+// STL - std::erase, std::erase_if
+// STL - std::sample
+// STL - std::rotate
+// STL - std::shuffle
+// STL - std::unique
+// STL - std::transform
+// STL - std::partition, std::is_partitioned, std::partition_copy, std::partition_point
+// STL - std::sort, std::stable_sort, std::greater<>(), std::less<>(), std::is_sorted, std::is_sorted_until
+// STL - std::nth_element, std::partial_sort
+// STL - std::merge, std::inplace_merge
+// STL - std::binary_search, std::lower_bound, std::upper_bound
+// STL - std::includes
+// STL - std::set_union, std::set_intersection
+// STL - std::set_difference, std::set_symatric_difference
+// STL - std::make heap, std::pop_heap, std::sort_heap
+// STL - std::min, std::max
+// STL - std::min_element, std::max_element
+// STL - std::minmax
+
+
+// STL - <numeric>
+// STL - std::clamp
+// STL - std::midpoint
+// STL - std::iota
+// STL - std::adjacent_difference
+// STL - std::partial_sum
+// STL - std::inner_product
+// STL - std::accumulate
+// STL - std::reduce // can be parallel: std::execution::par <execution>
+// STL - std::transform_reduce, std::multiplies<>{} // can be parallel: std::execution::par <execution>
+// STL - std::exclusive_scan, std::inclusive_scan
+// STL - std::swap, std::iter_swap
+
+
+// STL - <cmath>, std::lerp
+
+// STL - <format>, std::format()
+
+// <print>, std::print, std::cout, std::clog, std::cerr (unbuffered-slower), std::cin
+// <fstream>: std::ofstream, f.close(), std::ifstream, f.is_open(), <filesystem>, std::filesystem::exists(), std::getline(f, line);
+// std::ifstream("data.bin").read(reinterpret_cast<char*>(b.data()), b.size()*sizeof(int));
+// <sstream>; std::stringstream
+// string literal: R"()"
+// std::to_string, std::stoi
+// std::swap, std::iter_swap
+
+// constexpr (może być w kompilacji a może być w runtime), consteval (może być tylko w kompilacji), constinit (for variable global or static)
+
+// <cstdint>, <cstdfloat>
+// <bitset>, std::bitset<32> bits(some_int_variable)
+// std::print("{:b}\n", some_int_variable);
+// <bitset>, <bit>, std::rotl, std::rotr
+// <cstddef>, std::byte
+// <bit>, std::bit_cast<>, reinterpret_cast<>
+// <cmath>, std::fabs()
+// if constexpr(), std::is_floating_point_v<T>
+// <concepts>, requires std::integral<T>, requires std::floating_point<T>
+
+// <type_traits>, std::is_floating_point_v<T>, std::is_integral_v<T> 
+// std::enable_if<std::is_floating_point_v<T>, T>::type mNumberFloat = 0.0f;
+// if constexpr
+// std::forward<T>(x);
+// <ranges>, std::ranges::for_each(vec, print_lambda);, std::ranges::for_each, std::ranges::greater{}, std::ranges::views::filter, std::ranges::views::transform, std::ranges::views::drop_while, std::views::keys(dict), std::ranges::to<std::vector>(), std::views::elements<0>, std::views::cartesian_product(...), std::views::take(...)
+// <tuple>, std::tuple<T1, T2, T3> 
+// Zero-overhead principle: czyli np. wkaźniki std::unique_ptr albo std::string_view kompiluje się do dokładnie takiesamego kodu maszynowego jak surowy wskaźnik. Ogólnie stosowanie pewnych abstrakcji nie może sprawić że kody wykona się wolniej niż stosowanie surowych metod
+
+// compile-time safety features: const, constexpr, constinit, consteval, static_cast, static_assert, fixed width types, attributes, explicity constructors
+// run-time safety features: assert, exceptions, variable initalization, RAII, dynamic_cast, thread_local
+
+// static_assert(warunek, "komunikat");
+
+// attributes: [[nodiscard]], [[deprecated]], [[fallthrough]]
+
+// <exception>, nie rzucać wyjątków w destruktorze, stosować RAII w bloku try-catch bo rzucanie wyjątków może powodować memory liki jeżeli nie ma destruktorów dla obiektów np. dla prymitywnych typów
+
+// gdb --tui ./main
+
+// <stacktrace>, std::stacktrace::current(), g++ -std=c++23 -Wextra -Weffc++ -g3 -O0 ./main.cpp -o ./main -lstdc++exp; ./main
+
+// <optional>, std::optional<>, .has_value(), .value(), value_or(...)
+// export module math; export void some func..., import math
+
+// <filesystem>, std::filesystem::path p(path), .stem(), .extension(), .parent_path(), .filename(), .root_directory(), std::filesystem::directory_iterator(path), std::filesystem::recursive_directory_iterator(path)
