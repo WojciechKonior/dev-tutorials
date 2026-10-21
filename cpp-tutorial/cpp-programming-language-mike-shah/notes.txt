@@ -1,5 +1,6 @@
 g++ -std=c++17 -g3 -O0 main.cpp -o main; ./main
 gdb --args ./app --arg1 --arg2 ...
+// gdb --tui ./main
 (gdb) x/12wx &arg
 
 typedef int (*FcnPtrType)(int,int);
@@ -252,7 +253,7 @@ struct Struct{ static constexpr int SomeValue=67;}; //also inline because conste
 
 // <exception>, nie rzucać wyjątków w destruktorze, stosować RAII w bloku try-catch bo rzucanie wyjątków może powodować memory liki jeżeli nie ma destruktorów dla obiektów np. dla prymitywnych typów
 
-// gdb --tui ./main
+
 
 // <stacktrace>, std::stacktrace::current(), g++ -std=c++23 -Wextra -Weffc++ -g3 -O0 ./main.cpp -o ./main -lstdc++exp; ./main
 
